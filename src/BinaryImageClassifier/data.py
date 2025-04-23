@@ -1,4 +1,5 @@
 from torch.utils.data import DataLoader, random_split
+from torchvision.models.resnet import ResNet18_Weights
 from torchvision.transforms.v2 import Transform
 from typing import Tuple
 from torch import Tensor
@@ -36,11 +37,11 @@ class BIDataset(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return self.imgs_df.shape[0]
 
-    def __getitem__(self, index) -> Tuple[Tensor, Tensor]:
+    def __getitem__(self, index) -> Tuple[Tensor, int]:
         rel_img_path, label = self.imgs_df.iloc[index]
         abs_img_path = os.path.join(self.imgs_path, rel_img_path)
         try:
-            with Image.open(abs_img_path) as pil_img:
+            with Image.open(abs_img_path).convert("RGB") as pil_img:
                 tensor_img = self.tensorizer(pil_img)
         except Exception as e:
             raise ValueError(
@@ -56,7 +57,7 @@ class FitDataManager(L.LightningDataModule):
         self,
         images_folder_abs_path: str,
         images_labels_csv_abs_path: str,
-        train_val_test: Tuple[float, float, float] = (80, 10, 10),
+        train_val_test: Tuple[float, float, float] = (0.8, 0.1, 0.1),
         batch_size=32,
     ):
         assert (
@@ -72,7 +73,12 @@ class FitDataManager(L.LightningDataModule):
         dtst = BIDataset(
             self.imgs_path,
             self.imgs_csv,
-            transform=t.Compose(t.ToDtype(torch.float32, scale=True)),
+            transform=t.Compose(
+                [
+                    t.ToDtype(torch.float32, scale=True),
+                    ResNet18_Weights.IMAGENET1K_V1.transforms(),
+                ]
+            ),
         )
         train_set, val_set, test_set = random_split(dtst, self.train_val_test)
 

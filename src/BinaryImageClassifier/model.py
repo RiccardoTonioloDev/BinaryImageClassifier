@@ -7,7 +7,6 @@ import torch.nn.functional as F
 import torch.nn as nn
 import lightning as L
 import torch
-import wandb
 
 
 def custom_resnet():
@@ -19,46 +18,37 @@ def custom_resnet():
 class BIClassifier(L.LightningModule):
     def __init__(self, learning_rate=1e-3):
         super().__init__()
-        self.save_hyperparameters()
+        self.save_hyperparameters("learning_rate")
 
         # MODEL
         self.model = custom_resnet()
 
         # METRICS - Accuracy, Precision and Recall
-        self.batch_train_acc = Accuracy(task="binary")
         self.train_acc = Accuracy(task="binary")
         self.eval_acc = Accuracy(task="binary")
-        self.batch_train_prec = Precision(task="binary")
         self.train_prec = Precision(task="binary")
         self.eval_prec = Precision(task="binary")
-        self.batch_train_rec = Recall(task="binary")
         self.train_rec = Recall(task="binary")
         self.eval_rec = Recall(task="binary")
 
     def training_step(self, batch: Tuple[Tensor, Tensor], batch_idx: int):
         input, target = batch
         pred: Tensor = self.model.forward(input)
-        loss = F.binary_cross_entropy(pred, target)
+        loss = F.binary_cross_entropy_with_logits(pred, target)
 
         # Calculating metrics
         pred = pred.sigmoid()
-        batch_acc = self.batch_train_acc(pred, target)
-        self.train_acc.update(pred, target)
-        batch_prec = self.batch_train_prec(pred, target)
-        self.train_prec.update(pred, target)
-        batch_rec = self.batch_train_rec(pred, target)
-        self.train_rec.update(pred, target)
+        batch_acc = self.train_acc(pred, target)
+        batch_prec = self.train_prec(pred, target)
+        batch_rec = self.train_rec(pred, target)
 
-        # Logging both to wandb and on the stdout
-        dict_to_log = {
-            "train/batch_loss": loss.to("cpu").item(),
-            "train/batch_acc": batch_acc.to("cpu").item(),
-            "train/batch_prec": batch_prec.to("cpu").item(),
-            "train/batch_rec": batch_rec.to("cpu").item(),
-        }
-        wandb.log(dict_to_log)
         self.log_dict(
-            dict_to_log,
+            {
+                "train/batch_loss": loss,
+                "train/batch_acc": batch_acc,
+                "train/batch_prec": batch_prec,
+                "train/batch_rec": batch_rec,
+            },
             prog_bar=True,
         )
 
@@ -84,7 +74,7 @@ class BIClassifier(L.LightningModule):
     ):
         input, target = batch
         pred: Tensor = self.model.forward(input)
-        loss = F.binary_cross_entropy(pred, target)
+        loss = F.binary_cross_entropy_with_logits(pred, target)
 
         # Calculating metrics
         pred = pred.sigmoid()
@@ -113,7 +103,7 @@ class BIClassifier(L.LightningModule):
         self._shared_validation_logic(batch, "val")
 
     def on_validation_epoch_end(self):
-        self._shared_evaluation_logic(self, "val")
+        self._shared_evaluation_logic("val")
 
     def test_step(self, batch: Tuple[Tensor, Tensor], batch_idx: int):
         self._shared_validation_logic(batch, "test")
@@ -122,5 +112,5 @@ class BIClassifier(L.LightningModule):
         self._shared_evaluation_logic("test")
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
         return optimizer
