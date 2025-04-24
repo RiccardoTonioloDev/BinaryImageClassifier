@@ -37,7 +37,7 @@ class BIDataset(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return self.imgs_df.shape[0]
 
-    def __getitem__(self, index) -> Tuple[Tensor, int]:
+    def __getitem__(self, index) -> Tuple[Tensor, float]:
         rel_img_path, label = self.imgs_df.iloc[index]
         abs_img_path = os.path.join(self.imgs_path, rel_img_path)
         try:
