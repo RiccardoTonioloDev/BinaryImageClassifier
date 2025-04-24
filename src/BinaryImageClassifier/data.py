@@ -31,6 +31,16 @@ class BIDataset(torch.utils.data.Dataset):
         self.imgs_df = pd.read_csv(
             images_labels_csv_abs_path, names=["rel_path", "lbl"]
         )
+        valid_entries = []
+        for idx, row in self.imgs_df.iterrows():
+            rel_path = row["rel_path"]
+            try:
+                with Image.open(os.path.join(images_folder_abs_path, rel_path)) as im:
+                    im.verify()  # Only checks header, faster
+                valid_entries.append(row)
+            except Exception:
+                print(f"[WARNING] Corrupted image skipped: {rel_path}")
+        self.imgs_df = pd.DataFrame(valid_entries)
         self.tensorizer = t.ToImage()
         self.transform = transform
 
