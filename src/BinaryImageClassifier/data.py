@@ -3,13 +3,15 @@ from torchvision.models.resnet import ResNet18_Weights
 from torchvision.transforms.v2 import Transform
 from typing import Tuple
 from torch import Tensor
-from PIL import Image
+from PIL import Image, ImageFile
 
 import torchvision.transforms.v2 as t
 import lightning as L
 import pandas as pd
 import torch
 import os
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class BIDataset(torch.utils.data.Dataset):
