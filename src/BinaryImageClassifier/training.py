@@ -61,9 +61,11 @@ def main():
         conf.images_folder_abs_path,
         conf.images_labels_csv_abs_path,
         batch_size=conf.batch_size,
+        num_workers=conf.num_workers,
     )
 
     trainer.fit(model, datamodule=data)
+    trainer.test(model, datamodule=data)
 
 
 if __name__ == "__main__":

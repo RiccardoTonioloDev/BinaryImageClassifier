@@ -19,6 +19,7 @@ class Config:
         self._parser.add_argument("--inference_mode", type=bool, default=True)
         self._parser.add_argument("--checkpoint_path", type=str)
         self._parser.add_argument("--fast_dev_run", type=bool)
+        self._parser.add_argument("--num_workers", type=int, default=0)
 
         args = self._parser.parse_args()
         self.exp_name = args.exp_name
@@ -34,6 +35,7 @@ class Config:
         self.inference_mode = args.inference_mode
         self.checkpoint_path = args.checkpoint_path
         self.fast_dev_run = args.fast_dev_run
+        self.num_workers = args.num_workers
 
         if not os.path.isdir(os.path.join(self.checkpoint_path, self.exp_name)):
             os.mkdir(os.path.join(self.checkpoint_path, self.exp_name))
