@@ -93,7 +93,6 @@ class BIClassifier(L.LightningModule):
             f"{prefix}/loss",
             loss,
             prog_bar=True,
-            prog_bar=True,
             on_step=False,
             on_epoch=True,
             logger=True,
