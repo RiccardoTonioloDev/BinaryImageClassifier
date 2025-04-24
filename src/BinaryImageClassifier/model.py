@@ -52,6 +52,7 @@ class BIClassifier(L.LightningModule):
             prog_bar=True,
             on_step=True,
             on_epoch=False,
+            logger=True,
         )
 
         return loss
@@ -65,7 +66,11 @@ class BIClassifier(L.LightningModule):
                 "train/epoch_acc": training_set_acc,
                 "train/epoch_prec": training_set_prec,
                 "train/epoch_rec": training_set_rec,
-            }
+            },
+            prog_bar=True,
+            on_step=False,
+            on_epoch=True,
+            logger=True,
         )
         self.train_acc.reset()
         self.train_prec.reset()
@@ -84,7 +89,15 @@ class BIClassifier(L.LightningModule):
         self.eval_prec.update(pred, target)
         self.eval_rec.update(pred, target)
 
-        self.log(f"{prefix}/loss", loss, prog_bar=True)
+        self.log(
+            f"{prefix}/loss",
+            loss,
+            prog_bar=True,
+            prog_bar=True,
+            on_step=False,
+            on_epoch=True,
+            logger=True,
+        )
 
     def _shared_evaluation_logic(self, prefix: Literal["val", "test"]):
         set_acc = self.eval_acc.compute()
@@ -95,7 +108,11 @@ class BIClassifier(L.LightningModule):
                 f"{prefix}/epoch_acc": set_acc,
                 f"{prefix}/epoch_prec": set_prec,
                 f"{prefix}/epoch_rec": set_rec,
-            }
+            },
+            prog_bar=True,
+            on_step=False,
+            on_epoch=True,
+            logger=True,
         )
         self.eval_acc.reset()
         self.eval_prec.reset()
