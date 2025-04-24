@@ -34,7 +34,7 @@ class BIClassifier(L.LightningModule):
     def training_step(self, batch: Tuple[Tensor, Tensor], batch_idx: int):
         input, target = batch
         pred: Tensor = self.model.forward(input)
-        loss = F.binary_cross_entropy_with_logits(pred.squeeze(1), target)
+        loss = F.binary_cross_entropy_with_logits(pred, target)
 
         # Calculating metrics
         pred = pred.sigmoid()
@@ -74,7 +74,7 @@ class BIClassifier(L.LightningModule):
     ):
         input, target = batch
         pred: Tensor = self.model.forward(input)
-        loss = F.binary_cross_entropy_with_logits(pred.squeeze(1), target)
+        loss = F.binary_cross_entropy_with_logits(pred, target)
 
         # Calculating metrics
         pred = pred.sigmoid()

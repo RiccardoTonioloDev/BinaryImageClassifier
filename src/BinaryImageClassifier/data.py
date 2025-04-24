@@ -37,7 +37,7 @@ class BIDataset(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return self.imgs_df.shape[0]
 
-    def __getitem__(self, index) -> Tuple[Tensor, float]:
+    def __getitem__(self, index) -> Tuple[Tensor, Tensor]:
         rel_img_path, label = self.imgs_df.iloc[index]
         abs_img_path = os.path.join(self.imgs_path, rel_img_path)
         try:
@@ -49,7 +49,7 @@ class BIDataset(torch.utils.data.Dataset):
             )
         if self.transform:
             tensor_img = self.transform(tensor_img)
-        return tensor_img, label
+        return tensor_img, torch.tensor(label, dtype=torch.float32)
 
 
 class FitDataManager(L.LightningDataModule):
