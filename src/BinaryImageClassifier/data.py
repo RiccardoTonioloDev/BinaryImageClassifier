@@ -9,6 +9,7 @@ import torchvision.transforms.v2 as t
 import lightning as L
 import pandas as pd
 import torch
+import cv2
 import os
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -43,8 +44,12 @@ class BIDataset(torch.utils.data.Dataset):
         rel_img_path, label = self.imgs_df.iloc[index]
         abs_img_path = os.path.join(self.imgs_path, rel_img_path)
         try:
-            with Image.open(abs_img_path).convert("RGB") as pil_img:
-                tensor_img = self.tensorizer(pil_img)
+            img_cv = cv2.imread(abs_img_path)
+            if img_cv is None:
+                raise ValueError(f"OpenCV could not read the image.")
+            img_cv_rgb = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
+            pil_img = Image.fromarray(img_cv_rgb)
+            tensor_img = self.tensorizer(pil_img)
         except Exception as e:
             raise ValueError(
                 f"The absolute path ({abs_img_path}) for the current image isn't valid or the image is corrupted.\n{e}"
