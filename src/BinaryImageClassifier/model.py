@@ -50,6 +50,8 @@ class BIClassifier(L.LightningModule):
                 "train/batch_rec": batch_rec,
             },
             prog_bar=True,
+            on_step=True,
+            on_epoch=False,
         )
 
         return loss
