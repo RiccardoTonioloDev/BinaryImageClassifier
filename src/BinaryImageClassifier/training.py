@@ -3,14 +3,21 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch import seed_everything, Trainer
 from lightning.pytorch.loggers import WandbLogger
 
+import torch
 import os
 
 
 def main():
+    torch.set_float32_matmul_precision("high")
     seed_everything(42, workers=True)
     conf = Config()
 
-    wandb_logger = WandbLogger(project="BIC_Etra", name=conf.exp_name, log_model=True)
+    wandb_logger = WandbLogger(
+        project="BIC_Etra",
+        name=conf.exp_name,
+        log_model=True,
+        save_dir=os.path.join(conf.checkpoint_path, "logs"),
+    )
 
     checkpoint_acc = ModelCheckpoint(
         monitor="val/epoch_acc",
@@ -45,6 +52,7 @@ def main():
         callbacks=[checkpoint_acc, checkpoint_rec, checkpoint_prec],
         fast_dev_run=conf.fast_dev_run,
         inference_mode=conf.inference_mode,
+        logger=wandb_logger,
     )
 
     model = BIClassifier(conf.lr)

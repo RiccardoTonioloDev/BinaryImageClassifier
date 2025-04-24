@@ -60,6 +60,7 @@ class FitDataManager(L.LightningDataModule):
         train_val_test: Tuple[float, float, float] = (0.8, 0.1, 0.1),
         batch_size=32,
     ):
+        super().__init__()
         assert (
             sum(train_val_test) == 1.0
         ), "The percentages of the train/val/test partitions must add up to 1."
