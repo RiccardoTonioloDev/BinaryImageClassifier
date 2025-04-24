@@ -1,3 +1,4 @@
+from pathlib import Path
 from BinaryImageClassifier import BIClassifier, FitDataManager, Config
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch import seed_everything, Trainer
@@ -19,12 +20,14 @@ def main():
         save_dir=os.path.join(conf.checkpoint_path, "logs"),
     )
 
+    checkpoint_path = os.path.join(conf.checkpoint_path, conf.exp_name)
+
     checkpoint_acc = ModelCheckpoint(
         monitor="val/epoch_acc",
         mode="max",
         save_top_k=1,
         filename="best-acc-{epoch:02d}-{val_epoch_acc:.4f}",
-        dirpath=os.path.join(conf.checkpoint_path, conf.exp_name),
+        dirpath=checkpoint_path,
     )
 
     checkpoint_prec = ModelCheckpoint(
@@ -32,7 +35,7 @@ def main():
         mode="max",
         save_top_k=1,
         filename="best-prec-{epoch:02d}-{val_epoch_prec:.4f}",
-        dirpath=os.path.join(conf.checkpoint_path, conf.exp_name),
+        dirpath=checkpoint_path,
     )
 
     checkpoint_rec = ModelCheckpoint(
@@ -40,7 +43,7 @@ def main():
         mode="max",
         save_top_k=1,
         filename="best-rec-{epoch:02d}-{val_epoch_rec:.4f}",
-        dirpath=os.path.join(conf.checkpoint_path, conf.exp_name),
+        dirpath=checkpoint_path,
     )
 
     trainer = Trainer(
@@ -65,7 +68,12 @@ def main():
     )
 
     trainer.fit(model, datamodule=data)
-    trainer.test(model, datamodule=data)
+    folder = Path(checkpoint_path)
+
+    for ckpt_path in folder.glob("*.ckpt"):
+        model = BIClassifier.load_from_checkpoint(str(ckpt_path))
+        print(f"\nEvaluating: {ckpt_path.name}")
+        trainer.test(model=model, datamodule=data)
 
 
 if __name__ == "__main__":
