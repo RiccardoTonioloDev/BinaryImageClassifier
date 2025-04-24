@@ -59,6 +59,7 @@ class FitDataManager(L.LightningDataModule):
         images_labels_csv_abs_path: str,
         train_val_test: Tuple[float, float, float] = (0.8, 0.1, 0.1),
         batch_size=32,
+        num_workers=3,
     ):
         super().__init__()
         assert (
@@ -69,6 +70,7 @@ class FitDataManager(L.LightningDataModule):
         self.imgs_csv = images_labels_csv_abs_path
         self.train_val_test = train_val_test
         self.batch_size = batch_size
+        self.num_workers = num_workers
 
     def setup(self, stage):
         dtst = BIDataset(
@@ -83,18 +85,31 @@ class FitDataManager(L.LightningDataModule):
         )
         train_set, val_set, test_set = random_split(dtst, self.train_val_test)
 
-        if stage == "fit" or stage is None:
-            self.train_set = train_set
-        if stage == "validate" or stage is None:
+        if stage in ("fit", "validate", None):
             self.val_set = val_set
-        if stage == "test" or stage is None:
+        if stage in ("fit", None):
+            self.train_set = train_set
+        if stage in ("test", None):
             self.test_set = test_set
 
     def train_dataloader(self):
-        return DataLoader(self.train_set, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(
+            self.train_set,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=self.num_workers,
+        )
 
     def val_dataloader(self):
-        return DataLoader(self.val_set, batch_size=self.batch_size)
+        return DataLoader(
+            self.val_set,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+        )
 
     def test_dataloader(self):
-        return DataLoader(self.test_set, batch_size=self.batch_size)
+        return DataLoader(
+            self.test_set,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+        )
