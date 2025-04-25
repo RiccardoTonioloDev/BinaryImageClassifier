@@ -56,7 +56,7 @@ def main():
         fast_dev_run=conf.fast_dev_run,
         inference_mode=conf.inference_mode,
         logger=wandb_logger,
-        log_every_n_steps=5,
+        log_every_n_steps=1,
     )
 
     model = BIClassifier(conf.lr, conf.pos_to_neg_ratio, conf.label_smoothing)
