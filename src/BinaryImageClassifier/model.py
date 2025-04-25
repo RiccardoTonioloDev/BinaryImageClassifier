@@ -16,8 +16,14 @@ def custom_resnet():
 
 
 class BIClassifier(L.LightningModule):
-    def __init__(self, learning_rate=1e-3):
+    def __init__(
+        self,
+        learning_rate: float = 1e-3,
+        alpha: float = 1,
+        label_smoothing: float = 0.1,
+    ):
         super().__init__()
+        assert 0 <= label_smoothing < 1, "Label smoothing must be in [0, 1)."
         self.save_hyperparameters("learning_rate")
 
         # MODEL
@@ -31,10 +37,20 @@ class BIClassifier(L.LightningModule):
         self.train_rec = Recall(task="binary")
         self.eval_rec = Recall(task="binary")
 
+        self.pos_weight = torch.tensor([alpha])
+
+    def smooth_labels(self, targets: Tensor):
+        smoothing = self.hparams.label_smoothing
+        return targets * (1 - smoothing) + 0.5 * smoothing
+
     def training_step(self, batch: Tuple[Tensor, Tensor], batch_idx: int):
         input, target = batch
         pred: Tensor = self.model.forward(input).squeeze(1)
-        loss = F.binary_cross_entropy_with_logits(pred, target)
+        loss = F.binary_cross_entropy_with_logits(
+            pred,
+            self.smooth_labels(target),
+            pos_weight=self.pos_weight,
+        )
 
         # Calculating metrics
         pred = pred.sigmoid()
@@ -81,7 +97,11 @@ class BIClassifier(L.LightningModule):
     ):
         input, target = batch
         pred: Tensor = self.model.forward(input).squeeze(1)
-        loss = F.binary_cross_entropy_with_logits(pred, target)
+        loss = F.binary_cross_entropy_with_logits(
+            pred,
+            self.smooth_labels(target),
+            pos_weight=self.pos_weight,
+        )
 
         # Calculating metrics
         pred = pred.sigmoid()

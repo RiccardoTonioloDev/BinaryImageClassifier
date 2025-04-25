@@ -20,6 +20,16 @@ class Config:
         self._parser.add_argument("--checkpoint_path", type=str)
         self._parser.add_argument("--fast_dev_run", action="store_true")
         self._parser.add_argument("--num_workers", type=int, default=0)
+        self._parser.add_argument(
+            "--pos_to_neg_ratio",
+            type=float,
+            default=14825 / 3026,  # Coming from the ETRA dataset
+        )
+        self._parser.add_argument(
+            "--label_smoothing",
+            type=float,
+            default=0.1,
+        )
 
         args = self._parser.parse_args()
         self.exp_name = args.exp_name
@@ -36,6 +46,8 @@ class Config:
         self.checkpoint_path = args.checkpoint_path
         self.fast_dev_run = args.fast_dev_run
         self.num_workers = args.num_workers
+        self.pos_to_neg_ratio = args.pos_to_neg_ratio
+        self.label_smoothing = args.label_smoothing
 
         if not os.path.isdir(os.path.join(self.checkpoint_path, self.exp_name)):
             os.mkdir(os.path.join(self.checkpoint_path, self.exp_name))

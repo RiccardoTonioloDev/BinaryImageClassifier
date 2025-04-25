@@ -59,7 +59,7 @@ def main():
         log_every_n_steps=5,
     )
 
-    model = BIClassifier(conf.lr)
+    model = BIClassifier(conf.lr, conf.pos_to_neg_ratio, conf.label_smoothing)
 
     data = FitDataManager(
         conf.images_folder_abs_path,

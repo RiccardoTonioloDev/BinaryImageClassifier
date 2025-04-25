@@ -1,9 +1,10 @@
-from torch.utils.data import DataLoader, random_split
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from torchvision.models.resnet import ResNet18_Weights
+from torch.utils.data import DataLoader, random_split
 from torchvision.transforms.v2 import Transform
+from PIL import Image, ImageFile
 from typing import Tuple
 from torch import Tensor
-from PIL import Image, ImageFile
 
 import torchvision.transforms.v2 as t
 import lightning as L
@@ -18,31 +19,11 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 class BIDataset(torch.utils.data.Dataset):
     def __init__(
         self,
-        images_folder_abs_path: str,
-        images_labels_csv_abs_path: str,
+        df: pd.DataFrame,
         transform: Transform = None,
     ):
         super().__init__()
-        assert os.path.isdir(
-            images_folder_abs_path
-        ), "The `images_folder_abs_path` provided is neither valid nor it's pointing to a folder."
-        assert os.path.exists(
-            images_labels_csv_abs_path
-        ), "The `images_labels_csv_abs_path` provided isn't valid"
-
-        self.imgs_path = images_folder_abs_path
-        self.imgs_df = pd.read_csv(
-            images_labels_csv_abs_path, names=["rel_path", "lbl"]
-        )
-        valid_entries = []
-        for idx, row in self.imgs_df.iterrows():
-            rel_path = row["rel_path"]
-            img_cv = cv2.imread(os.path.join(images_folder_abs_path, rel_path))
-            if img_cv is not None:
-                valid_entries.append(row)
-            else:
-                print(f"[WARNING] Corrupted image skipped: {rel_path}")
-        self.imgs_df = pd.DataFrame(valid_entries)
+        self.imgs_df = df
         self.tensorizer = t.ToImage()
         self.transform = transform
 
@@ -78,20 +59,59 @@ class FitDataManager(L.LightningDataModule):
         num_workers=3,
     ):
         super().__init__()
+        assert os.path.isdir(
+            images_folder_abs_path
+        ), "The `images_folder_abs_path` provided is neither valid nor it's pointing to a folder."
+        assert os.path.exists(
+            images_labels_csv_abs_path
+        ), "The `images_labels_csv_abs_path` provided isn't valid"
         assert (
             sum(train_val_test) == 1.0
         ), "The percentages of the train/val/test partitions must add up to 1."
         assert batch_size >= 1, "The batch size should be at least 1."
+
         self.imgs_path = images_folder_abs_path
         self.imgs_csv = images_labels_csv_abs_path
         self.train_val_test = train_val_test
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.imgs_path = images_folder_abs_path
+        self.imgs_df = pd.read_csv(
+            images_labels_csv_abs_path, names=["rel_path", "lbl"]
+        )
 
     def setup(self, stage):
+        def is_valid_image(row, images_folder_abs_path):
+            rel_path = row["rel_path"]
+            full_path = os.path.join(images_folder_abs_path, rel_path)
+            try:
+                with Image.open(full_path) as img:
+                    img.verify()  # verifica che l'immagine non sia corrotta
+                return row
+            except Exception as e:
+                return None
+
+        def filter_valid_images(imgs_df, images_folder_abs_path, max_workers=8):
+            valid_entries = []
+
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = [
+                    executor.submit(is_valid_image, row, images_folder_abs_path)
+                    for _, row in imgs_df.iterrows()
+                ]
+                for future in as_completed(futures):
+                    result = future.result()
+                    if result is not None:
+                        valid_entries.append(result)
+
+            return pd.DataFrame(valid_entries)
+
+        self.imgs_df = filter_valid_images(
+            self.imgs_df, self.imgs_path, os.cpu_count() - 1
+        )
+
         dtst = BIDataset(
-            self.imgs_path,
-            self.imgs_csv,
+            self.imgs_df,
             transform=t.Compose(
                 [
                     t.ToDtype(torch.float32, scale=True),
