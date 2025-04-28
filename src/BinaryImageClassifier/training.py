@@ -19,6 +19,9 @@ def main():
         log_model=True,
         save_dir=os.path.join(conf.checkpoint_path, "logs"),
     )
+    wandb_logger.experiment.config.update(
+        {"lr": conf.lr, "batch_size": conf.batch_size, "precision": conf.precision}
+    )
 
     checkpoint_path = os.path.join(conf.checkpoint_path, conf.exp_name)
 

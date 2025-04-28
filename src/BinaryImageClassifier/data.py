@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader, random_split, Dataset
 from torchvision.models.resnet import ResNet18_Weights
 from torchvision.transforms.v2 import Transform
 from PIL import Image, ImageFile
-from typing import Tuple
+from typing import Optional, Tuple
 from torch import Tensor
 
 import torchvision.transforms.v2 as t
@@ -20,10 +20,12 @@ class BIDataset(Dataset):
     def __init__(
         self,
         df: pd.DataFrame,
-        transform: Transform = None,
+        images_path: str,
+        transform: Optional[Transform] = None,
     ):
         super().__init__()
         self.imgs_df = df
+        self.imgs_path = images_path
         self.tensorizer = t.ToImage()
         self.transform = transform
 
@@ -126,7 +128,7 @@ class FitDataManager(L.LightningDataModule):
         )
 
         dtst = BIDataset(
-            self.imgs_df,
+            self.imgs_path,
             transform=t.Compose(
                 [
                     t.ToDtype(torch.float32, scale=False),
