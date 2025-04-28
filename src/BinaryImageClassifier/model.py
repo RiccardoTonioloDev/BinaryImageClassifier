@@ -100,7 +100,7 @@ class BIClassifier(L.LightningModule):
         loss = F.binary_cross_entropy_with_logits(
             pred,
             self.smooth_labels(target),
-            pos_weight=self.self.pos_weight,
+            pos_weight=self.pos_weight,
         )
 
         # Calculating metrics

@@ -141,8 +141,8 @@ class FitDataManager(L.LightningDataModule):
         train_set_augmentations = t.Compose(
             [
                 t.RandomHorizontalFlip(0.5),
-                t.ColorJitter(brightness=0.15, contrast=0.15, saturation=0.15),
-                t.RandomPerspective(distortion_scale=0.25, p=0.5),
+                t.ColorJitter(brightness=0.10, contrast=0.10, saturation=0.10),
+                # t.RandomPerspective(distortion_scale=0.25, p=0.5),
                 t.ToDtype(torch.float32, scale=True),
                 t.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ]
