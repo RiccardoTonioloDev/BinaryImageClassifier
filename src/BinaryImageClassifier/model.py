@@ -24,7 +24,7 @@ class BIClassifier(L.LightningModule):
     ):
         super().__init__()
         assert 0 <= label_smoothing < 1, "Label smoothing must be in [0, 1)."
-        self.save_hyperparameters("learning_rate")
+        self.save_hyperparameters("learning_rate", "alpha", "label_smoothing")
 
         # MODEL
         self.model = custom_resnet()
