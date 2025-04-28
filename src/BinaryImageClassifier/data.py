@@ -133,7 +133,7 @@ class FitDataManager(L.LightningDataModule):
             transform=t.Compose(
                 [
                     t.ToDtype(torch.float32, scale=False),
-                    t.Resize(300),
+                    t.Resize((300, 300)),
                 ]
             ),
         )
