@@ -37,8 +37,6 @@ class BIClassifier(L.LightningModule):
         self.train_rec = Recall(task="binary")
         self.eval_rec = Recall(task="binary")
 
-        self.pos_weight = torch.tensor([alpha])
-
     def smooth_labels(self, targets: Tensor):
         smoothing = self.hparams.label_smoothing
         return targets * (1 - smoothing) + 0.5 * smoothing
@@ -49,7 +47,7 @@ class BIClassifier(L.LightningModule):
         loss = F.binary_cross_entropy_with_logits(
             pred,
             self.smooth_labels(target),
-            pos_weight=self.pos_weight,
+            pos_weight=self.hparams.alpha,
         )
 
         # Calculating metrics
@@ -100,7 +98,7 @@ class BIClassifier(L.LightningModule):
         loss = F.binary_cross_entropy_with_logits(
             pred,
             self.smooth_labels(target),
-            pos_weight=self.pos_weight,
+            pos_weight=self.self.hparams.alpha,
         )
 
         # Calculating metrics
