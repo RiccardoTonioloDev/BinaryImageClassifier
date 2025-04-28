@@ -132,7 +132,7 @@ class FitDataManager(L.LightningDataModule):
             self.imgs_path,
             transform=t.Compose(
                 [
-                    t.ToDtype(torch.float32, scale=False),
+                    t.ToDtype(torch.float32, scale=True),
                     t.Resize(300),
                     t.CenterCrop(268),
                 ]
@@ -141,15 +141,13 @@ class FitDataManager(L.LightningDataModule):
         train_set_augmentations = t.Compose(
             [
                 t.RandomHorizontalFlip(0.5),
-                t.ColorJitter(brightness=0.10, contrast=0.10, saturation=0.10),
+                # t.ColorJitter(brightness=0.10, contrast=0.10, saturation=0.10),
                 # t.RandomPerspective(distortion_scale=0.25, p=0.5),
-                t.ToDtype(torch.float32, scale=True),
                 t.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ]
         )
         evaluation_set_agumentations = t.Compose(
             [
-                t.ToDtype(torch.float32, scale=True),
                 t.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ]
         )
