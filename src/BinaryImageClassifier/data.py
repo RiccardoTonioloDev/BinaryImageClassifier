@@ -128,6 +128,7 @@ class FitDataManager(L.LightningDataModule):
         )
 
         dtst = BIDataset(
+            self.imgs_df,
             self.imgs_path,
             transform=t.Compose(
                 [
