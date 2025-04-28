@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from torch.utils.data import DataLoader, random_split, Dataset
 from torchvision.models.resnet import ResNet18_Weights
-from torch.utils.data import DataLoader, random_split
 from torchvision.transforms.v2 import Transform
 from PIL import Image, ImageFile
 from typing import Tuple
@@ -16,7 +16,7 @@ import os
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
-class BIDataset(torch.utils.data.Dataset):
+class BIDataset(Dataset):
     def __init__(
         self,
         df: pd.DataFrame,
@@ -47,6 +47,21 @@ class BIDataset(torch.utils.data.Dataset):
         if self.transform:
             tensor_img = self.transform(tensor_img)
         return tensor_img, torch.tensor(label, dtype=torch.float32)
+
+
+class Augment(Dataset):
+    def __init__(self, dataset: Dataset, using: Transform):
+        self.dtst = dataset
+        self.using = using
+
+    def __len__(self):
+        return len(self.dtst)
+
+    def __getitem__(self, index):
+        image, label = self.dtst[index]
+        if self.using:
+            image = self.using(image)
+        return image, label
 
 
 class FitDataManager(L.LightningDataModule):
@@ -114,19 +129,30 @@ class FitDataManager(L.LightningDataModule):
             self.imgs_df,
             transform=t.Compose(
                 [
-                    t.ToDtype(torch.float32, scale=True),
-                    ResNet18_Weights.IMAGENET1K_V1.transforms(),
+                    t.ToDtype(torch.float32, scale=False),
+                    t.Resize(300),
                 ]
             ),
+        )
+        train_set_augmentations = t.Compose(
+            t.RandomHorizontalFlip(0.5),
+            t.ColorJitter(brightness=0.15, contrast=0.15, saturation=0.15),
+            t.RandomPerspective(distortion_scale=0.25, p=0.5),
+            t.ToDtype(torch.float32, scale=True),
+            t.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        )
+        evaluation_set_agumentations = t.Compose(
+            t.ToDtype(torch.float32, scale=True),
+            t.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         )
         train_set, val_set, test_set = random_split(dtst, self.train_val_test)
 
         if stage in ("fit", "validate", None):
-            self.val_set = val_set
+            self.val_set = Augment(dataset=val_set, using=evaluation_set_agumentations)
         if stage in ("fit", None):
-            self.train_set = train_set
+            self.train_set = Augment(dataset=train_set, using=train_set_augmentations)
         if stage in ("test", None):
-            self.test_set = test_set
+            self.test_set = Augment(test_set, using=evaluation_set_agumentations)
 
     def train_dataloader(self):
         return DataLoader(
