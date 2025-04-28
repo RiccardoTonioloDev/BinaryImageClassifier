@@ -19,7 +19,7 @@ class Config:
         self._parser.add_argument("--inference_mode", action="store_true")
         self._parser.add_argument("--checkpoint_path", type=str)
         self._parser.add_argument("--fast_dev_run", action="store_true")
-        self._parser.add_argument("--num_workers", type=int, default=0)
+        self._parser.add_argument("--num_workers", type=int, default=1)
         self._parser.add_argument(
             "--pos_to_neg_ratio",
             type=float,

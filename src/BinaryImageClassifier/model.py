@@ -27,7 +27,7 @@ class BIClassifier(L.LightningModule):
         self.save_hyperparameters("learning_rate", "label_smoothing")
 
         # MODEL
-        self.model = custom_resnet()
+        self.model = torch.compile(custom_resnet())  # Speeding up training
 
         # METRICS - Accuracy, Precision and Recall
         self.train_acc = Accuracy(task="binary")
