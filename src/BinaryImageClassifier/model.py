@@ -24,7 +24,7 @@ class BIClassifier(L.LightningModule):
     ):
         super().__init__()
         assert 0 <= label_smoothing < 1, "Label smoothing must be in [0, 1)."
-        self.save_hyperparameters("learning_rate", "alpha", "label_smoothing")
+        self.save_hyperparameters("learning_rate", "label_smoothing")
 
         # MODEL
         self.model = custom_resnet()
@@ -37,6 +37,8 @@ class BIClassifier(L.LightningModule):
         self.train_rec = Recall(task="binary")
         self.eval_rec = Recall(task="binary")
 
+        self.register_buffer("pos_weight", torch.tensor([alpha]))
+
     def smooth_labels(self, targets: Tensor):
         smoothing = self.hparams.label_smoothing
         return targets * (1 - smoothing) + 0.5 * smoothing
@@ -47,7 +49,7 @@ class BIClassifier(L.LightningModule):
         loss = F.binary_cross_entropy_with_logits(
             pred,
             self.smooth_labels(target),
-            pos_weight=self.hparams.alpha,
+            pos_weight=self.pos_weight,
         )
 
         # Calculating metrics
@@ -98,7 +100,7 @@ class BIClassifier(L.LightningModule):
         loss = F.binary_cross_entropy_with_logits(
             pred,
             self.smooth_labels(target),
-            pos_weight=self.self.hparams.alpha,
+            pos_weight=self.self.pos_weight,
         )
 
         # Calculating metrics
